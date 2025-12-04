@@ -202,3 +202,71 @@ nx.draw_networkx(G
 
 plt.show(block=True)
 fig.savefig('gtfs_networkx_map.png', dpi=300)
+
+
+# =============================
+
+# Make node csv
+import csv
+import numpy as np
+
+# Collapse MultiGraph to simple graph with weights (as before)
+G_simple = nx.Graph()
+for u, v, data in G.edges(data=True):
+    w = data.get('count', 1)
+    if G_simple.has_edge(u, v):
+        G_simple[u][v]['weight'] += w
+    else:
+        G_simple.add_edge(u, v, weight=w)
+
+# Consistent node ordering + index
+nodes = list(G_simple.nodes())
+node_index = {node: i for i, node in enumerate(nodes)}
+
+# --- NODES TABLE ---
+with open('nodes.csv', 'w', newline='', encoding='utf-8') as f:
+    writer = csv.writer(f)
+    writer.writerow(['node_idx', 'stop_id', 'stop_name', 'stop_lon', 'stop_lat'])
+    for stop_id in nodes:
+        attrs = G.nodes[stop_id]
+        writer.writerow([
+            node_index[stop_id],
+            stop_id,
+            attrs.get('stop_name', ''),
+            attrs.get('stop_lon', ''),
+            attrs.get('stop_lat', '')
+        ])
+
+
+# --- EDGES TABLE ---
+
+with open('edges.csv', 'w', newline='', encoding='utf-8') as f:
+    writer = csv.writer(f)
+    writer.writerow([
+        'edge_idx',
+        'from_idx', 'to_idx',
+        'from_stop_id', 'to_stop_id',
+        'route_short_name', 'count'
+    ])
+
+    for edge_idx, (u, v, key, data) in enumerate(G.edges(keys=True, data=True)):
+        writer.writerow([
+            edge_idx,
+            node_index[u],
+            node_index[v],
+            u,
+            v,
+            key,                     # this is route_short_name (your edge key)
+            data.get('count', 1)
+        ])
+
+
+# --- ADJACENCY MATRIX ---
+A = nx.to_numpy_array(G_simple, nodelist=nodes, weight='weight')
+
+with open('adjacency_matrix.csv', 'w', newline='', encoding='utf-8') as f:
+    writer = csv.writer(f)
+    # header row with stop_id; you could also use node_idx instead
+    writer.writerow(['stop_id'] + nodes)
+    for i, stop_id in enumerate(nodes):
+        writer.writerow([stop_id] + list(A[i, :]))
