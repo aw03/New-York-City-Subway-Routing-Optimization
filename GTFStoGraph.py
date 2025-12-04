@@ -8,19 +8,23 @@ inspired by https://github.com/paulgb/gtfs-gexf/blob/master/transform.py
 """
 
 import networkx as nx
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 from csv import DictReader
 from itertools import groupby
 import cartopy.feature as cfeature
+import matplotlib
+matplotlib.use("Agg")   # or "SVG", "PDF", etc.
+import matplotlib.pyplot as plt
+
 
     
-DATA_ROOT='C:\\Users\\rolan\\Downloads\\SydneyTrains\\'
+DATA_ROOT="C:\\Users\\Administrator\\GTFS-NetworkX\datasets\\"
 TRIPS_FILE = f'{DATA_ROOT}trips.txt'
 ROUTES_FILE = f'{DATA_ROOT}routes.txt'
 STOPS_FILE = f'{DATA_ROOT}stops.txt'
 
-INCLUDE_AGENCIES=['NSWTrainLink']
+INCLUDE_AGENCIES=['MTA NYCT']
 
 IGNORE_ROUTE=['RTTA_DEF', #out of service
               'RTTA_REV',  #revenue train (charter)
@@ -156,12 +160,29 @@ print('Edges:', G.number_of_edges() )
 
 
 deg = nx.degree(G)
-labels = {stop_id: G.node[stop_id]['stop_name'] if deg[stop_id] >= 0 else ''
-          for stop_id in G.nodes}
+labels = {
+    stop_id: G.nodes[stop_id].get('stop_name', '') if deg[stop_id] >= 0 else ''
+    for stop_id in G.nodes
+}
 
-pos = {stop_id: (G.node[stop_id]['stop_lon'], G.node[stop_id]['stop_lat'])
-       for stop_id in G.nodes}
 
+pos = {
+    stop_id: (
+        G.nodes[stop_id].get('stop_lon'),
+        G.nodes[stop_id].get('stop_lat')
+    )
+    for stop_id in G.nodes
+}
+
+pos = {}
+for stop_id in G.nodes:
+    try:
+        lon = float(G.nodes[stop_id]['stop_lon'])
+        lat = float(G.nodes[stop_id]['stop_lat'])
+        pos[stop_id] = (lon, lat)
+    except (KeyError, TypeError, ValueError):
+        # Skip nodes without valid numeric coordinates
+        continue
 
 # lon/lat data is in PlateCarree projection
 data_crs = ccrs.PlateCarree()
@@ -175,8 +196,9 @@ nx.draw_networkx(G
 #                 ,labels=labels
                  ,pos=pos
                  ,node_size=2
-                 ,transform=data_crs
+                # ,transform=data_crs
                 )
 #ax.set_axis_off()
 
-plt.show()
+plt.show(block=True)
+fig.savefig('gtfs_networkx_map.png', dpi=300)
