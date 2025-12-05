@@ -181,7 +181,7 @@ print("Num nodes:", len(nodes))
 print("Num routes:", len(routes_in_graph))
 
 # --- NODES TABLE ---
-with open('nodes.csv', 'w', newline='', encoding='utf-8') as f:
+with open('generated_graphs\\nodes.csv', 'w', newline='', encoding='utf-8') as f:
     writer = csv.writer(f)
     writer.writerow(['node_idx', 'stop_id', 'stop_name', 'stop_lon', 'stop_lat'])
     for stop_id in nodes:
@@ -195,14 +195,14 @@ with open('nodes.csv', 'w', newline='', encoding='utf-8') as f:
         ])
 
 # --- ROUTES TABLE ---
-with open('routes.csv', 'w', newline='', encoding='utf-8') as f:
+with open('generated_graphs\\routes.csv', 'w', newline='', encoding='utf-8') as f:
     writer = csv.writer(f)
     writer.writerow(['route_idx', 'route_short_name'])
     for r, k in route_index.items():
         writer.writerow([k, r])
 
 # --- EDGES TABLE WITH ROUTE DIMENSION (for x_i_j_r) ---
-with open('edges_by_route.csv', 'w', newline='', encoding='utf-8') as f:
+with open('generated_graphs\\edges_by_route.csv', 'w', newline='', encoding='utf-8') as f:
     writer = csv.writer(f)
     writer.writerow([
         'edge_idx',
@@ -270,3 +270,31 @@ nx.draw_networkx(
 
 plt.show(block=True)
 fig.savefig('gtfs_networkx_map_with_routes.png', dpi=300)
+
+import csv
+
+# ================================
+# For each stop: which routes stop there?
+# ================================
+
+with open('generated_graphs\\stop_routes.csv', 'w', newline='', encoding='utf-8') as f:
+    writer = csv.writer(f)
+    writer.writerow(['stop_id', 'stop_name', 'routes_at_stop'])
+
+    for stop_id in G.nodes():
+        attrs = G.nodes[stop_id]
+        stop_name = attrs.get('stop_name', '')
+
+        # Collect all route_short_name keys for edges incident to this stop
+        routes_here = set()
+
+        # edges attached to this node: (u, v, key, data)
+        for u, v, r, data in G.edges(stop_id, keys=True, data=True):
+            routes_here.add(r)
+
+        routes_list = sorted(routes_here)  # nice and ordered for readability
+        routes_str = ",".join(routes_list)
+
+        writer.writerow([stop_id, stop_name, routes_str])
+
+print("Wrote stop_routes.csv")
