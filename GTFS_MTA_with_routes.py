@@ -29,9 +29,7 @@ STOPS_FILE = f'{DATA_ROOT}stops.txt'
 INCLUDE_AGENCIES = ['MTA NYCT']
 
 IGNORE_ROUTE = [
-    'RTTA_DEF',  # out of service
-    'RTTA_REV',  # revenue train (charter)
-    'BL_1b', 'BL_1c', 'BL_1d', 'BL_1e'
+    'SI' # Staten Island Railway, not part of subway network
 ]
 
 # MultiGraph so we can have multiple edges (routes) between same stations
@@ -183,7 +181,7 @@ print("Num nodes:", len(nodes))
 print("Num routes:", len(routes_in_graph))
 
 # --- NODES TABLE ---
-with open('nodes_v2.csv', 'w', newline='', encoding='utf-8') as f:
+with open('nodes.csv', 'w', newline='', encoding='utf-8') as f:
     writer = csv.writer(f)
     writer.writerow(['node_idx', 'stop_id', 'stop_name', 'stop_lon', 'stop_lat'])
     for stop_id in nodes:
@@ -197,14 +195,14 @@ with open('nodes_v2.csv', 'w', newline='', encoding='utf-8') as f:
         ])
 
 # --- ROUTES TABLE ---
-with open('routes_v2.csv', 'w', newline='', encoding='utf-8') as f:
+with open('routes.csv', 'w', newline='', encoding='utf-8') as f:
     writer = csv.writer(f)
     writer.writerow(['route_idx', 'route_short_name'])
     for r, k in route_index.items():
         writer.writerow([k, r])
 
 # --- EDGES TABLE WITH ROUTE DIMENSION (for x_i_j_r) ---
-with open('edges_by_route_v2.csv', 'w', newline='', encoding='utf-8') as f:
+with open('edges_by_route.csv', 'w', newline='', encoding='utf-8') as f:
     writer = csv.writer(f)
     writer.writerow([
         'edge_idx',
