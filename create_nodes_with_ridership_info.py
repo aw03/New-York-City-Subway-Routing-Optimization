@@ -26,7 +26,7 @@ evening = evening.rename(columns={"ridership": "ridership_evening"})
 morning_keep = morning[["GTFS Stop ID", "station_complex_id", "ridership_morning"]].drop_duplicates()
 evening_keep = evening[["GTFS Stop ID", "ridership_evening"]].drop_duplicates()
 
-# ---------- MERGE MORNING (adds complex_id + morning ridership) ----------
+# ---------- MERGE MORNING ----------
 nodes_merged = nodes.merge(
     morning_keep,
     left_on="stop_id",
@@ -39,11 +39,14 @@ nodes_merged = nodes_merged.merge(
     evening_keep,
     left_on="stop_id",
     right_on="GTFS Stop ID",
-    how="left",
+    how="left"
 )
 
 # ---------- CLEAN UP EXTRA GTFS columns ----------
 nodes_merged = nodes_merged.drop(columns=[col for col in nodes_merged.columns if col.startswith("GTFS Stop ID")])
+
+# ---------- ADD NET RIDERSHIP COLUMN ----------
+nodes_merged["net_ridership"] = nodes_merged["ridership_morning"] - nodes_merged["ridership_evening"]
 
 # ---------- SAVE ----------
 nodes_merged.to_csv(nodes_output, index=False)
