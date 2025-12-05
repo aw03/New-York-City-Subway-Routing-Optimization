@@ -1,4 +1,4 @@
-route_short_name,cars_per_train,rush_hour_capacity_per_car,total_rush_hour_capacity
+route_idx,route_short_name,cars_per_train,rush_hour_capacity_per_car,total_rush_hour_capacity
 0,1,10,310,3100
 1,2,10,310,3100
 2,3,10,310,3100
@@ -17,7 +17,7 @@ route_short_name,cars_per_train,rush_hour_capacity_per_car,total_rush_hour_capac
 15,FX,10,365,3650
 16,G,5,365,1825
 17,J,8,365,2920
-18,8,365,2920
+18,L,8,365,2920
 19,M,8,365,2920
 20,N,10,365,3650
 21,Q,10,365,3650
