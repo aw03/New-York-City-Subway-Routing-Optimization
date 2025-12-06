@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue May  8 17:48:55 2018
+@author: aw03
 
-@author: roland
 
-inspired by https://github.com/paulgb/gtfs-gexf/blob/master/transform.py
+
+inspired by 
 """
 
 import networkx as nx
@@ -25,6 +25,7 @@ DATA_ROOT = "C:\\Users\\Administrator\\GTFS-NetworkX\\datasets\\"
 TRIPS_FILE = f'{DATA_ROOT}trips.txt'
 ROUTES_FILE = f'{DATA_ROOT}routes.txt'
 STOPS_FILE = f'{DATA_ROOT}stops.txt'
+TRANSFERS_FILE = f'{DATA_ROOT}transfers.txt'   # <-- add this
 
 INCLUDE_AGENCIES = ['MTA NYCT']
 
@@ -113,12 +114,33 @@ def load_stops(filename):
     print('stops', len(stops_dict))
     return stops_dict
 
+def load_transfers(filename):
+    """
+    Load transfers from transfers.txt.
+
+    Expected columns (standard GTFS):
+      from_stop_id, to_stop_id, transfer_type, min_transfer_time (optional)
+
+    We keep all rows, but you could filter on transfer_type if desired.
+    """
+    transfers_csv = DictReader(open(filename, 'r'))
+    transfers = []
+    for row in transfers_csv:
+        # you can filter here if you want, e.g. only recommended transfers:
+        # if row.get('transfer_type', '0') not in ('0', '1'):
+        #     continue
+        transfers.append(row)
+    print('transfers', len(transfers))
+    return transfers
 
 # ==============================================
 
 ROUTES = load_routes(filename=ROUTES_FILE)
 TRIPS = load_trips(filename=TRIPS_FILE, routes_dict=ROUTES)
 STOPS = load_stops(filename=STOPS_FILE)
+TRANSFERS = load_transfers(filename=TRANSFERS_FILE)
+
+# ==============================================
 
 stop_times_csv = DictReader(open(f'{DATA_ROOT}stop_times.txt', 'r'))
 
@@ -228,6 +250,61 @@ with open('generated_graphs\\edges_by_route.csv', 'w', newline='', encoding='utf
         ])
 
 print("Wrote nodes.csv, routes.csv, edges_by_route.csv")
+
+# ================================================
+# Build TRANSFER EDGES CSV from GTFS transfers.txt
+# ================================================
+
+transfer_edges = []  # list of (from_node, to_node, transfer_type, min_time)
+
+for row in TRANSFERS:
+    raw_from = row['from_stop_id']
+    raw_to = row['to_stop_id']
+
+    # Map GTFS stop_ids to the parent-station node ids used in G
+    u = get_stop_id(raw_from)
+    v = get_stop_id(raw_to)
+
+    # Ignore self-transfers after collapsing to parent stations
+    if u == v:
+        continue
+
+    # Only keep transfers where both endpoints exist in our graph
+    if u not in node_index or v not in node_index:
+        continue
+
+    transfer_type = row.get('transfer_type', '')
+    min_transfer_time = row.get('min_transfer_time', '')
+
+    transfer_edges.append((u, v, transfer_type, min_transfer_time))
+
+print(f"Transfer edges (after mapping to graph nodes): {len(transfer_edges)}")
+
+# Write CSV
+with open('generated_graphs\\transfer_edges.csv', 'w', newline='', encoding='utf-8') as f:
+    writer = csv.writer(f)
+    writer.writerow([
+        'transfer_edge_id',
+        'from_stop_id', 'to_stop_id',
+        'from_idx', 'to_idx',
+        'transfer_type',
+        'min_transfer_time',
+        'cost'
+    ])
+
+    for edge_id, (u, v, ttype, min_time) in enumerate(transfer_edges):
+        # cost: you said you want same cost as any other station-to-station move
+        # so we just set cost = 1. Change here if you later want to use min_time.
+        writer.writerow([
+            edge_id,
+            u, v,
+            node_index[u], node_index[v],
+            ttype,
+            min_time,
+            1   # constant traversal cost
+        ])
+
+print("Wrote transfer_edges.csv")
 
 
 # ================================
