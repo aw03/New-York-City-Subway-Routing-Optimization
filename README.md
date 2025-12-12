@@ -1,29 +1,102 @@
-# GTFS-NetworkX
-Loading GTFS data into NetworkX
+# 🗽 NYC Subway Optimization Project
 
-I wanted to experiment with **[NetworkX]** and maps.<br>
-To have a network to play with I decided to draw the Sydney Train network on a map.
+**Graph Construction • Data Preprocessing • Gurobi Optimization Model**
 
-### This Script
-This script reads standard **[GTFS]** files and adds them to a [NetworkX] graph.<br>
-That graph can then be used to analyse the data or plot the network. <BR>
-I only tested it on the Sydney Transport data, but it should work on all GTFS packages.
+This repository contains all code used to build a multi-line subway network graph for the NYC Subway, preprocess ridership and GTFS datasets, and run a system-wide train frequency optimization model using **Gurobi**. The project focuses on weekday rush-hour demand and evaluates optimized train allocations against the published MTA schedule.
 
-### NSW Transport
-Transport NSW makes its timetable availabe in the Google [GTFS] format.<br>
-A set of files can be downloaded from their [open data portal].
+---
 
-### Inspiration
-To import the data into a NetworkX graph I used the work of **[paulgb]** as inspiration.
-https://github.com/paulgb/gtfs-gexf
+## 🚆 Project Overview
 
-### Result
-still work in progress
-![Map of the Network](./images/map-plot.png)
+This project optimizes train frequencies and route allocations across the NYC Subway during weekday rush hours. The pipeline consists of three major components:
 
+### **1. Subway Graph Construction**
 
+* Parses GTFS (`trips.txt`, `stop_times.txt`, `stops.txt`, `routes.txt`, `transfers.txt`).
+* Builds a **directed multi-graph** where edges may belong to multiple subway lines.
+* Merges stations with multiple complex IDs by leveraging GTFS transfer metadata.
+* Computes traversal times between stations.
+* Outputs a `networkx` multi-digraph used by the optimizer.
 
-[GTFS]: https://developers.google.com/transit/gtfs/reference/
-[open data portal]:https://opendata.transport.nsw.gov.au/
-[paulgb]:https://github.com/paulgb/
-[NetworkX]:https://networkx.github.io/
+### **2. Data Preprocessing**
+
+* Loads hourly ridership data from NYC Open Data (2020–2024).
+* Extracts:
+
+  * **6–10am entries** (AM peak inbound flows)
+  * **4–8pm exits** (PM peak outbound flows)
+* Normalizes and integerizes demand while preserving realistic network proportions.
+* Maps ridership entries to graph stations.
+* Prepares capacity, line lengths, and route-specific metadata.
+
+### **3. Gurobi Optimization Model**
+
+Implements the final model that assigns hourly train frequencies to each subway line, subject to:
+
+* Line-specific capacity constraints
+* Minimum train frequency constraints
+* Demand satisfaction via multi-line flows (`x_{i,j,l}`)
+* Train energy / operational cost approximation
+* Objective that minimizes system-wide travel time and operational cost
+
+The notebook in `model.ipynb` demonstrates the full optimization pipeline.
+
+---
+
+## 🧪 Reproducibility
+
+### **Install Requirements**
+
+```bash
+pip install networkx matplotlib cartopy
+```
+
+### **Run Graph Construction**
+
+```bash
+python GTFS_MTA_with_routes.py
+```
+
+### **Run Preprocessing**
+
+```bash
+python aggregate_turnstile_data.py
+python map_turnstile_data_to_gtfs_id.py
+python create_nodes_with_ridership_info.py
+```
+
+### **Run the Optimization Notebook**
+
+Open:
+
+```
+model.ipynb
+```
+
+and run all cells.
+Make sure you have a valid **Gurobi license** (academic licenses are free).
+
+---
+
+## 📊 Outputs
+
+The repository produces:
+
+* A complete `networkx` subway multi-graph
+* Cleaned station-level rush-hour demand
+* Train frequencies per line (optimized)
+* Comparison against published GTFS schedules
+* Visualizations and summary metrics (from notebooks)
+
+---
+
+## Data Sources
+
+* **NYC Subway Hourly Ridership (2020–2024)**
+  NYC Open Data — `wujg-7c2s`
+* **MTA GTFS Data (static)**
+  [https://www.mta.info/developers](https://www.mta.info/developers)
+* **MTA Subway Stations Dataset**
+  NYC Open Data — `39hk-dx4f`
+
+---
