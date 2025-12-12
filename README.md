@@ -1,4 +1,4 @@
-# 🗽 NYC Subway Optimization Project
+# NYC Subway Optimization Project
 
 **Graph Construction • Data Preprocessing • Gurobi Optimization Model**
 
@@ -6,7 +6,7 @@ This repository contains all code used to build a multi-line subway network grap
 
 ---
 
-## 🚆 Project Overview
+## Project Overview
 
 This project optimizes train frequencies and route allocations across the NYC Subway during weekday rush hours. The pipeline consists of three major components:
 
@@ -43,7 +43,7 @@ The notebook in `model.ipynb` demonstrates the full optimization pipeline.
 
 ---
 
-## 🧪 Reproducibility
+## Reproducibility
 
 ### **Install Requirements**
 
@@ -78,7 +78,7 @@ Make sure you have a valid **Gurobi license** (academic licenses are free).
 
 ---
 
-## 📊 Outputs
+## Outputs
 
 The repository produces:
 
